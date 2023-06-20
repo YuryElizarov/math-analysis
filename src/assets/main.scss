@@ -1,0 +1,10 @@
+@import './base.scss';
+
+#app {
+    min-height: 100vh;
+    display: flex;
+}
+* {
+    font-family: 'Inter', sans-serif;
+    transition: all .25s ease;
+}
