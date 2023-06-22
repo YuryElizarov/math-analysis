@@ -37,10 +37,11 @@ nav {
      align-items: center;
 
      background-color: var(--base-100);
-     box-shadow: 0px 2px 25px rgba(21, 22, 27, 0.06);
-     height: 50px;
+     box-shadow: 0px 2px 25px rgba(var(--base-1000-rgb), 0.06);
+     height: var(--navbar-height);
      width: 100%;
      margin-bottom: 15px;
+     z-index: 20;
 }
 
 ol {
@@ -58,6 +59,7 @@ a {
      gap: 5px;
      text-decoration: inherit;
      color: var(--base-700);
+     fill: var(--base-700);
      font-size: 16px;
      font-weight: 600;
      border-radius: 6px;
@@ -66,12 +68,11 @@ a {
      svg {
           width: 24px;
           height: 24px;
-          fill: inherit;
-          transition: fill 250ms;
+          transition: inherit;
      }
 
      &:hover {
-          background-color: var(--main-500-15);
+          background-color: rgba(var(--main-500-rgb), 0.15);
           color: var(--main-500);
           fill: var(--main-500);
      }
