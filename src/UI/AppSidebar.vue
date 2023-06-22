@@ -1,5 +1,7 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import AppDivider from './AppDivider.vue';
+import AppArrowLeftIcon from './icons/AppArrowLeftIcon.vue';
 
 defineProps<{
      groups: Array<{
@@ -12,11 +14,11 @@ defineProps<{
      }>
 }>()
 
-
+const isClosed = ref<boolean>(false);
 </script>
 
 <template>
-     <aside class="sidebar-toggle">
+     <aside class="sidebar-toggle" :class="{'closed': isClosed}">
           <div class="sidebar">
                <div v-for="(group, index) in groups" :key="group.id">
                     <AppDivider class="divider" v-if="index > 0" />
@@ -30,24 +32,50 @@ defineProps<{
                     </ul>
                </div>
           </div>
-          <button class="toggle"> &lt; </button>
+          <button class="toggle" @click="() => isClosed = !isClosed"><AppArrowLeftIcon /></button>
      </aside>
 </template>
 
 <style scoped lang="scss">
 aside {
+     --sidebar-width: 250px;
+
      position: fixed;
      top: var(--navbar-height);
+     left: 0;
      height: calc(100vh - var(--navbar-height));
      z-index: 10;
+     transition: left 0.5s;
+
+     &.closed {
+          left: calc(0px - var(--sidebar-width));
+
+          .toggle {
+               transform: rotate(180deg);
+          }
+     }
 }
 
 .toggle {
+     height: fit-content;
      position: absolute;
+     display: flex;
+     justify-content: center;
+     align-items: center;
+
+     top: 15px;
+     padding: 5px;
+     right: calc(-16px - 5px * 2 - 10px);
+     border-radius: 6px;
+     border: none;
+     background-color: var(--base-300);
+     fill: var(--base-600);
+     color: var(--base-600);
+     cursor: pointer;
 }
 
 .sidebar {
-     width: 250px;
+     width: var(--sidebar-width);
      height: 100vh;
      padding: 20px 10px;
      background-color: var(--base-100);
