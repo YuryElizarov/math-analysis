@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { SelectToggleOption, Formula } from "@/utils/interfaces";
-import { computed, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import AppCard from "./AppCard.vue";
 import AppSelectToggle from "./AppSelectToggle.vue";
 import AppDivider from "./AppDivider.vue";
@@ -9,12 +9,12 @@ const props = defineProps<{
     formula: Formula
 }>()
 
-const formulaOptions = computed(() => {
-    const options: Array<SelectToggleOption> = []
-    for (const extra of props.formula.extras)
-        options.push({ id: extra.id, name: extra.name });
-    return options;
-})
+const formulaOptions = computed(() => 
+    props.formula.extras.map(extra => ({
+        id: extra.id,
+        name: extra.name
+    }))
+);
 
 const selectedOption = ref<string | null>(null);
 </script>
@@ -22,7 +22,7 @@ const selectedOption = ref<string | null>(null);
 <template>
     <AppCard :style="{ padding: '15px 25px' }">
         <h5 class="formula-name" :id="formula.id"><a :href="'#' + formula.id">{{ formula.name }}</a></h5>
-        <MathJax class="latex" :latex="formula.latex" />
+        <div class="latex">${{ formula.latex }}$</div>
         <AppSelectToggle v-if="formulaOptions.length > 0" :options="formulaOptions" v-model="selectedOption" />
         <AppDivider class="divider" v-if="selectedOption" />
         <span class="text">
