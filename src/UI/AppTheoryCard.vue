@@ -1,16 +1,18 @@
 <script setup lang="ts">
-import type { SelectToggleOption, Formula } from "@/utils/interfaces";
-import { computed, onMounted, ref } from "vue";
+import type { TheoryExtra } from "@/utils/interfaces";
+import { computed, ref } from "vue";
 import AppCard from "./AppCard.vue";
 import AppSelectToggle from "./AppSelectToggle.vue";
 import AppDivider from "./AppDivider.vue";
 
 const props = defineProps<{
-    formula: Formula
+    id: string,
+    title: string,
+    extras: Array<TheoryExtra>
 }>()
 
-const formulaOptions = computed(() => 
-    props.formula.extras.map(extra => ({
+const selectToggleOptions = computed(() => 
+    props.extras.map(extra => ({
         id: extra.id,
         name: extra.name
     }))
@@ -20,22 +22,27 @@ const selectedOption = ref<string | null>(null);
 </script>
 
 <template>
-    <AppCard :style="{ padding: '15px 25px' }">
-        <h5 class="formula-name" :id="formula.id"><a :href="'#' + formula.id">{{ formula.name }}</a></h5>
-        <div class="latex">${{ formula.latex }}$</div>
-        <AppSelectToggle v-if="formulaOptions.length > 0" :options="formulaOptions" v-model="selectedOption" />
+    <AppCard class="card">
+        <h5 :id="id"><a :href="'#' + id">{{ title }}</a></h5>
+        <slot />
+
+        <AppSelectToggle class="select-toggle" v-if="selectToggleOptions.length > 0" :options="selectToggleOptions" v-model="selectedOption" />
         <AppDivider class="divider" v-if="selectedOption" />
         <span class="text">
-            <component v-for="extra in formula.extras" :key="extra.id" v-show="selectedOption === extra.id"
+            <component v-for="extra in extras" :key="extra.id" v-show="selectedOption === extra.id"
                 :is="extra.content" />
         </span>
     </AppCard>
 </template>
 
 <style scoped lang="scss">
-.formula-name {
+.card {
+    max-width: 900px;
+}
+
+h5 {
     position: relative;
-    cursor: pointer;
+    margin-bottom: 5px;
 
     &:hover {
         &:before {
@@ -48,22 +55,18 @@ const selectedOption = ref<string | null>(null);
         transition: opacity 250ms;
         opacity: 0;
         position: absolute;
-        left: -12px;
+        left: -14px;
         font-weight: inherit;
     }
 }
 
-.latex {
-    font-size: 18px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 5px 10px;
+.select-toggle {
+    margin-top: 10px;
+}
 
-    margin: 10px 0;
-
-    background: var(--base-200);
-    border-radius: 6px;
+.card-title {
+    position: relative;
+    cursor: pointer;
 }
 
 .divider {

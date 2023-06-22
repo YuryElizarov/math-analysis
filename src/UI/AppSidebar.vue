@@ -22,7 +22,7 @@ const isClosed = ref<boolean>(false);
           <div class="sidebar">
                <div v-for="(group, index) in groups" :key="group.id">
                     <AppDivider class="divider" v-if="index > 0" />
-                    <h6 class="group-name">{{ group.name }}</h6>
+                    <h6 class="group-name" v-if="group.name">{{ group.name }}</h6>
                     <ul>
                          <li class="item" v-for="item in group.content" :key="item.id">
                               <RouterLink :to="`#${item.id}`" :class="{ current: $route.hash === `#${item.id}` }" :data-text="item.name">

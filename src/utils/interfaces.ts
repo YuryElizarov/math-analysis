@@ -5,17 +5,24 @@ export interface SelectToggleOption {
     name: string
 }
 
-export interface FormulaExtra {
+export interface TheoryExtra {
     id: string,
     name: string,
     content: VNode
+}
+
+export interface Term {
+    id: string,
+    name: string,
+    content: VNode,
+    extras: Array<TheoryExtra>
 }
 
 export interface Formula {
     id: string,
     name: string,
     latex: string,
-    extras: Array<FormulaExtra>
+    extras: Array<TheoryExtra>
 }
 
 export interface FormulasGroup {

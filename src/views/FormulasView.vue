@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import AppSidebar from "@/UI/AppSidebar.vue";
-import AppFormulaCard from "@/UI/AppFormulaCard.vue";
 import formulas from "@/assets/formulas";
 import { computed } from "vue";
+import AppTheoryCard from "@/UI/AppTheoryCard.vue";
 
-const sidebarGroups = computed(() => 
+const sidebarGroups = computed(() =>
      formulas.map(group => ({
           id: group.id,
           name: group.name,
@@ -12,7 +12,7 @@ const sidebarGroups = computed(() =>
                id: formula.id,
                name: formula.name
           }))
-      })
+     })
 ));
 </script>
 
@@ -22,7 +22,10 @@ const sidebarGroups = computed(() =>
           <main>
                <section v-for="group in formulas" :key="group.id" class="group">
                     <h2 class="group-name" :id="group.id"><a :href="'#' + group.id">{{ group.name }}</a></h2>
-                    <AppFormulaCard class="card" v-for="formula in group.content" :key="formula.id" :formula="formula" />
+                    <AppTheoryCard :style="{ padding: '15px 25px' }" v-for="formula in group.content" :key="formula.id"
+                         :id="formula.id" :title="formula.name" :extras="formula.extras">
+                         <div class="latex">${{ formula.latex }}$</div>
+                    </AppTheoryCard>
                </section>
           </main>
      </div>
@@ -75,5 +78,16 @@ main {
           left: -5px;
           font-weight: inherit;
      }
+}
+
+.latex {
+     font-size: 18px;
+     display: flex;
+     justify-content: center;
+     align-items: center;
+     padding: 5px 10px;
+
+     background: var(--base-200);
+     border-radius: 6px;
 }
 </style>
