@@ -36,6 +36,7 @@ const sidebarGroups = computed(() =>
 <style scoped lang="scss">
 .container {
      position: relative;
+     margin-bottom: 25px;
 }
 
 main {

@@ -35,6 +35,8 @@ nav {
      display: flex;
      justify-content: center;
      align-items: center;
+     position: sticky;
+     top: 0;
 
      background-color: var(--base-100);
      box-shadow: 0px 2px 25px rgba(var(--base-1000-rgb), 0.06);

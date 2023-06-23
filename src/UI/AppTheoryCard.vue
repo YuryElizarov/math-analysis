@@ -43,6 +43,7 @@ const selectedOption = ref<string | null>(null);
 h5 {
     position: relative;
     margin-bottom: 5px;
+    scroll-margin-top: 80px;
 
     &:hover {
         &:before {
@@ -80,7 +81,20 @@ a {
     font-weight: inherit;
 }
 
-.text :deep(h6){
-    margin-bottom: 5px;
+.text {
+    line-height: 1.5;
+
+    :deep(h6) {
+        margin-bottom: 5px;
+    }
+
+    :deep(img) {
+        display: block;
+        margin: 0 auto;
+    }
+
+    :deep(li:not(:last-child)) {
+        margin-bottom: 3px;
+    }
 }
 </style>

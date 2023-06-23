@@ -34,6 +34,7 @@ const sidebarGroups = computed(() =>
 <style scoped lang="scss">
 .container {
      position: relative;
+     margin-bottom: 25px;
 }
 
 main {
@@ -56,6 +57,7 @@ main {
      position: relative;
      cursor: pointer;
      padding-left: 15px;
+     scroll-margin-top: 80px;
 
      a {
           color: inherit;

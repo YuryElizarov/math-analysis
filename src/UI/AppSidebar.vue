@@ -14,7 +14,7 @@ defineProps<{
      }>
 }>()
 
-const isClosed = ref<boolean>(false);
+const isClosed = ref<boolean>(true);
 </script>
 
 <template>
@@ -25,9 +25,9 @@ const isClosed = ref<boolean>(false);
                     <h6 class="group-name" v-if="group.name">{{ group.name }}</h6>
                     <ul>
                          <li class="item" v-for="item in group.content" :key="item.id">
-                              <RouterLink :to="`#${item.id}`" :class="{ current: $route.hash === `#${item.id}` }" :data-text="item.name">
+                              <a :href="`#${item.id}`" :class="{ current: $route.hash === `#${item.id}` }">
                                    {{ item.name }}
-                              </RouterLink>
+                              </a>
                          </li>
                     </ul>
                </div>
