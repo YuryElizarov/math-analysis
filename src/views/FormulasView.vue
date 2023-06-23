@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import AppSidebar from "@/UI/AppSidebar.vue";
 import formulas from "@/assets/formulas";
-import { computed } from "vue";
+import { computed, onMounted } from "vue";
 import AppTheoryCard from "@/UI/AppTheoryCard.vue";
 
 const sidebarGroups = computed(() =>
@@ -14,6 +14,7 @@ const sidebarGroups = computed(() =>
           }))
      })
 ));
+onMounted(MathJax.typeset)
 </script>
 
 <template>
