@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import HomeView from "@/views/HomeView.vue";
+import AppNavbar from './UI/AppNavbar.vue'
 </script>
 
 <template>
-  <HomeView/>
+  <AppNavbar />
+  <RouterView v-slot="{ Component }">
+    <KeepAlive include="FormulasView,TermsView">
+      <component :is="Component" />
+    </KeepAlive>
+  </RouterView>
 </template>
-
-<style scoped>
-</style>

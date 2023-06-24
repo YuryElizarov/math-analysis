@@ -1,24 +1,40 @@
 :root {
-  --c-background: #F2F4FA;
-  --c-heading: #15161B;
-  --c-text: #15161B;
-  --c-card: #fff;
-  --c-card-hover: #e5e5e5;
-  --c-card-active: #b2b2b2;
-  --c-input: #F2F4FA;
-  --c-input-hover: #f7f8fa;
-  --c-input-active: #bdbfc4;
+  --base-100: #FFFFFF;
+  --base-200: #F2F4FA;
+  --base-300: #C7CBE0;
+  --base-500: #6C7188;
+  --base-600: #4C5061;
+  --base-700: #3B3E4F;
+  --base-1000-rgb: 21, 22, 27;
+  --base-1000: #15161B;
+
+  --main-400: #5FA2F9;
+  --main-500-rgb: 36, 122, 251;
+  --main-500: #4189f6;
+  --main-600: #0450D2;
+
+
+  --c-background: var(--base-200);
+  --c-heading: var(--base-1000);
+  --c-text: var(--base-1000);
+  --c-card: var(--base-100);
+  --c-card-hover: #E5E5E5;
+  --c-card-active: #B2B2B2;
+  --c-input: var(--base-200);
+  --c-input-hover: #F7F8FA;
+  --c-input-active: #BDBFC4;
   --c-inactive: #3B3E4F;
-  --c-button: #4189f6;
-  --c-button-hover: #247AFB;
-  --c-button-active: #0565f5;
-  --c-button-disabled: rgba(36, 122, 251, 0.5);
-  --c-button-text: #fff;
-}
 
-:root {
-}
+  --c-divider: var(--base-300);
 
+  --c-button: var(--main-500);
+  --c-button-hover: var(--main-400);
+  --c-button-active: var(--main-600);
+  --c-button-disabled: rgba(var(--main-500-rgb), 0.5);
+  --c-button-text: var(--base-100);
+
+  --navbar-height: 50px
+}
 
 *,
 *::before,
@@ -28,13 +44,39 @@
   font-weight: normal;
 }
 
+html {
+  font-size: 14px;
+  scroll-behavior: smooth;
+}
+
+svg {
+  fill: inherit;
+}
+
 body {
-  background: var(--c-background);
+  background: var(--base-200);
+  color: var(--base-1000);
   line-height: 1.2;
-  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
-    Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-  font-size: 16px;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+p {
+  font-size: 14px;
+}
+
+h2 {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+h5 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+h6 {
+  font-size: 16px;
+  font-weight: 600;
 }
