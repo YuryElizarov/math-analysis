@@ -15,17 +15,33 @@
           </AppText>
         </div>
         <div class="math-block">
-<!--          <math-field class="math-field" id="mf" ref="mf" @input="changeFunc(mf.value)">-->
-<!--            <slot></slot>-->
-<!--          </math-field>-->
-          <AppInput v-model="func"/>
+          <math-field class="math-field" id="mf" ref="mf" @input="changeFunc(mf.value)">
+            <slot></slot>
+          </math-field>
+          <!--          <AppInput v-model="func"/>-->
           <AppButton @action="renderResult">Дифференцировать</AppButton>
         </div>
-        <p>
-          <math-jax :latex="formula"></math-jax><br/><br/>
-          <math-jax :latex="res"></math-jax><br/><br/>
-          <math-jax :latex="simple"></math-jax>
-        </p>
+      </div>
+      <div class="solution-wrapper">
+        <AppHeading>Решение</AppHeading>
+        <div class="solution-block">
+          <CalculatorStep v-for="(step, index) in steps" :key="index" :step="step" :index="index" />
+        </div>
+        <AppHeading>Ответ</AppHeading>
+        <div class="result-block">
+          <div class="gray-wrapper source-block">
+            <math-jax :latex="formula + '='"></math-jax>
+          </div>
+          <div class="gray-wrapper">
+            <math-jax :latex="res"></math-jax>
+          </div>
+          <div class="gray-wrapper source-block">
+            =
+          </div>
+          <div class="gray-wrapper">
+            <math-jax :latex="simple"></math-jax>
+          </div>
+        </div>
       </div>
     </AppCard>
   </main>
@@ -33,18 +49,24 @@
 
 <script setup lang="ts">
 import {derivative} from "@/utils/derivative";
-import {parse, simplify} from "mathjs";
+// import {parse, simplify} from "mathjs";
+import {create, all} from 'mathjs';
 import AppHeading from "@/UI/AppHeading.vue";
 import AppCard from "@/UI/AppCard.vue";
 import AppTabs from "@/UI/AppTabs.vue";
-import {computed, ref, watch} from "vue";
+import {ref} from "vue";
 import AppText from "@/UI/AppText.vue";
 import AppInput from "@/UI/AppInput.vue";
 import AppButton from "@/UI/AppButton.vue";
+import CalculatorStep from "@/components/CalculatorStep.vue";
+import {StepProp} from "@/config/steps";
+
+const mathjs = create(all);
+// mathjs.config({ number: 'Fraction' });
 
 const functionTypesTabs: string[] = ['ФОП',
-  // 'Невявно заданная функция',
-  // 'Невявно заданная функция'
+  // 'Неяввно заданная функция',
+  // 'Параметрически заданная функция'
 ]
 const derivationMethodTabs: string[] = [
   "Стандартный",
@@ -53,22 +75,15 @@ const derivationMethodTabs: string[] = [
 
 const mf = ref<any>(null)
 
-const func = ref<string>(``)
+const func = ref<string>(`sin(x)^2-x^3+(1)/(x)+4`)
 const formula = ref<string>('')
 const res = ref<string>('')
 const simple = ref<string>('')
 const variable = ref<string>('x')
+const steps = ref<StepProp[]>([])
 
 const functionType = ref<string>(functionTypesTabs[0])
 const derivationMethod = ref<string>(derivationMethodTabs[0])
-// watch(mf, (newValue, oldValue) => {
-//   console.log('mf', newValue)
-// })
-watch(func, (newValue, oldValue) => {
-  console.log('func', newValue)
-})
-
-
 
 const selectFunctionType = (_functionType: string) => {
   functionType.value = _functionType
@@ -80,12 +95,17 @@ const changeFunc = (_func: string) => {
   func.value = _func
 }
 const renderResult = () => {
-  const resFunc = derivative(func.value, 'x')
+  steps.value = []
+  console.log('func.value',func.value)
+  const resFunc = derivative(func.value, variable.value, steps.value)
 // formula.value = parse(func.value).toTex()
-  formula.value = func.value
-  const resFuncParsed = parse(resFunc)
+  formula.value = `f'(x)=(${func.value})'_{${variable.value}}`
+  formula.value = formula.value.replace('tg', 'tan')
+  formula.value = formula.value.replace('ctg', 'cot')
+  console.log('resFunc',resFunc)
+  const resFuncParsed = mathjs.parse(resFunc)
   res.value = resFuncParsed.toTex()
-  simple.value = simplify(resFuncParsed).toTex()
+  simple.value = mathjs.simplify(resFuncParsed).toTex()
 }
 
 </script>
@@ -145,8 +165,39 @@ main {
   align-content: center;
   justify-content: flex-start;
   width: 100%;
+
   .input {
     width: 100%;
+  }
+}
+
+.solution-wrapper {
+  .heading {
+    text-align: left;
+    padding-left: 20px;
+  }
+  margin-top: 25px;
+}
+
+.solution-block {
+  margin-top: 10px;
+  margin-bottom: 25px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.result-block {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  align-content: center;
+
+  .source-block {
+    background: transparent;
   }
 }
 </style>

@@ -8,3 +8,13 @@
     font-family: 'Inter', sans-serif;
     transition: all .25s ease;
 }
+
+.gray-wrapper {
+    padding: 5px 10px;
+    background: var(--c-input);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    align-content: center;
+}
