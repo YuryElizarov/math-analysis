@@ -96,5 +96,9 @@ a {
     :deep(li:not(:last-child)) {
         margin-bottom: 3px;
     }
+
+    :deep(p + p) {
+        margin-top: 6px;
+    }
 }
 </style>
