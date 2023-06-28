@@ -3,18 +3,24 @@ import { computed, onMounted } from 'vue';
 import terms from "@/assets/terms"
 import AppSidebar from '@/UI/AppSidebar.vue';
 import AppTheoryCard from '@/UI/AppTheoryCard.vue';
+import { useRoute } from 'vue-router';
 
 const sidebarGroups = computed(() =>
-([{
-     id: "0",
-     name: "",
-     content: terms.map(term => ({
-          id: term.id,
-          name: term.name
-     }))
-}])
-);
-onMounted(MathJax.typeset)
+     terms.map(group => ({
+          id: group.id,
+          name: group.name,
+          content: group.content.map(term => ({
+               id: term.id,
+               name: term.name
+          }))
+     })
+));
+
+const route = useRoute()
+onMounted(() => {
+     document.getElementById(route.hash.slice(1))?.scrollIntoView()
+     MathJax.typeset()
+})
 </script>
 
 
@@ -23,10 +29,10 @@ onMounted(MathJax.typeset)
      <div class="container">
           <AppSidebar :groups="sidebarGroups" />
           <main>
-               <section>
-                    <h2>Термины</h2>
-                    <AppTheoryCard :style="{ padding: '10px 20px' }" v-for="term in terms" :key="term.id" :title="term.name"
-                         :id="term.id" :extras="term.extras">
+               <section v-for="group in terms" :key="group.id" class="group">
+                    <h2 class="group-name" :id="group.id">{{ group.name }}</h2>
+                    <AppTheoryCard :style="{ padding: '15px 25px' }" v-for="term in group.content" :key="term.id"
+                         :id="term.id" :title="term.name" :extras="term.extras">
                          <component :is="term.content" />
                     </AppTheoryCard>
                </section>

@@ -3,6 +3,7 @@ import AppSidebar from "@/UI/AppSidebar.vue";
 import formulas from "@/assets/formulas";
 import { computed, onMounted } from "vue";
 import AppTheoryCard from "@/UI/AppTheoryCard.vue";
+import { useRoute } from "vue-router";
 
 const sidebarGroups = computed(() =>
      formulas.map(group => ({
@@ -14,7 +15,12 @@ const sidebarGroups = computed(() =>
           }))
      })
 ));
-onMounted(MathJax.typeset)
+
+const route = useRoute()
+onMounted(() => {
+     document.getElementById(route.hash.slice(1))?.scrollIntoView()
+     MathJax.typeset()
+})
 </script>
 
 <template>
