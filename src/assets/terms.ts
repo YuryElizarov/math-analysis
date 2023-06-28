@@ -171,7 +171,7 @@ export default [
                             h("p", "Пусть имеем $\\Phi(x)$ и $F(x)-$ две первообразные для функции $f(x)$"),
                             h("p", "$\\Rightarrow\\left\\{\\begin{array}{l}\\Phi^{\\prime}(x) \\equiv f(x) \\\\ F^{\\prime}(x) \\equiv f(x)\\end{array}\\right.$ для $\\forall x$, принадлежащих пересечению ООФ $ f(x), \\Phi^{\\prime}(x)$ и $F^{\\prime}(x)$ $\\Rightarrow \\Phi^{\\prime}(x)-F^{\\prime}(x) \\equiv 0 \\Rightarrow(\\Phi(x)-F(x))^{\\prime} \\equiv 0$ (проведено вычитание равенств и использовано свойство линейности операции дифференцирования)"),
                             h("p", "$\\Rightarrow \\Phi(x)-F(x) \\equiv C$, где $C$ - const относительно $x$ (по признаку постоянства функции)"),
-                            h("p", "$\\Rightarrow \\Phi(x)=F(x)+\\mathrm{C}"),
+                            h("p", "$\\Rightarrow \\Phi(x)=F(x)+\\mathrm{C}$"),
                         ])
                     }
                 ]
