@@ -2,14 +2,18 @@ import {all, create, MathNode} from "mathjs";
 import {convertLatexToAsciiMath} from 'mathlive'
 import {EStep, StepProp, tableDerivations} from "@/config/steps";
 
-const isSymbolNode = (node: any): boolean => 'name' in node;
 const isOperatorNode = (node: any): boolean => 'fn' in node;
+const isSymbolNode = (node: any): boolean => 'name' in node && !isOperatorNode(node);
+const isExp = (node: any): boolean => isSymbolNode(node) && node.name === 'e';
 const isParenthesisNode = (node: any): boolean => 'content' in node;
 const isConstantNode = (node: any): boolean => {
   node = isParenthesisNode(node) ? node.content : node
   return 'value' in node || (node.args && (isConstantNode(node.args[0]) && isConstantNode(node.args[1])))
 };
-const isParam = (arg: any, param: string): boolean => isSymbolNode(arg) && arg.name === param;
+const isParam = (node: any, param: string): boolean => {
+  node = isParenthesisNode(node) ? node.content : node
+  return isSymbolNode(node) && node.name === param;
+}
 
 
 function derivativePow(degree: number, param: string): string {
@@ -23,6 +27,7 @@ function derivativePowFormula(degree: number, param: string): string {
 function derivativeSqrt(param: string): string {
   return `1 / (2*sqrt(${param}))`
 }
+
 function derivativeSqrtFormula(param: string): string {
   return `\\frac{1}{(2\\cdot\\sqrt{${param}})}`
 }
@@ -30,8 +35,15 @@ function derivativeSqrtFormula(param: string): string {
 function derivativeDivide(div: number, param: string): string {
   return `-(${div}/${param}^2)`
 }
+
 function derivativeDivideFormula(div: number, param: string): string {
   return `-\\frac{${div}}{${param}^2}`
+}
+
+function getParam(param: string) {
+  const params: string[] = ['x', 'z', 't','g']
+  const paramIndex = params.indexOf(param)
+  return params[(paramIndex === -1 || paramIndex === (params.length - 1)) ? 0 : paramIndex + 1]
 }
 
 function getConstant(node: any) {
@@ -71,6 +83,8 @@ export function derivative(func: string, param: string, steps: StepProp[]): stri
   const tree: MathNode = mathjs.parse(f)
   console.log(tree)
   let step: StepProp
+  let z: string
+  const paramName = getParam(param)
 
   if (isOperatorNode(tree)) {
     const [arg1, arg2] = tree.args
@@ -81,7 +95,7 @@ export function derivative(func: string, param: string, steps: StepProp[]): stri
           const val = getConstant(arg2)
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = ${derivativePowFormula(val, arg1.toString())}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = ${derivativePowFormula(val, arg1.toString())}`,
             tableDerivative: tableDerivations.pow
           }
           steps.push(step)
@@ -94,14 +108,15 @@ export function derivative(func: string, param: string, steps: StepProp[]): stri
             }
           }
         } else if (isParenthesisNode(arg1)) {
+          z = arg1.toTex()
           step = {
             step: EStep.Difficult,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\left({${tree.toTex()}}\\right)_{x}^{\\prime}\\cdot \\left({${arg1.toTex()}}\\right)_{x}^{\\prime}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\left({${tree.toTex()}}\\right)_{${paramName}}^{\\prime}\\cdot \\left({${arg1.toTex()}}\\right)_{${param}}^{\\prime},\\thinspace где\\thinspace ${paramName} = ${z}`,
           }
           steps.push(step)
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = ${derivativePowFormula(arg2.value, arg1.toTex())}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${paramName}}^{\\prime} = ${derivativePowFormula(arg2.value, arg1.toTex())},\\thinspace где\\thinspace ${paramName} = ${z}`,
             tableDerivative: tableDerivations.pow
           }
           steps.push(step)
@@ -110,31 +125,54 @@ export function derivative(func: string, param: string, steps: StepProp[]): stri
 
           res += `${arg1.value}^${arg2.toString()} * ln(${arg1.value})`
           if (isParenthesisNode(arg2)) {
+            z = arg2.content.toTex()
             step = {
               step: EStep.Difficult,
-              formula: `\\left({${arg1.value}^{${arg2.content.toTex()}}}\\right)_{x}^{\\prime} = \\left({${arg1.value}^{${arg2.content.toTex()}}}\\right)_{x}^{\\prime}\\cdot {${arg2.content.toString()}}_{x}^{\\prime})`,
+              formula: `\\left({${arg1.value}^{${arg2.content.toTex()}}}\\right)_{${param}}^{\\prime} = \\left({${arg1.value}^{${arg2.content.toTex()}}}\\right)_{${paramName}}^{\\prime}\\cdot {${arg2.content.toString()}}_{${param}}^{\\prime},\\thinspace где\\thinspace ${paramName} = ${z}`,
+            }
+            steps.push(step)
+            res += `* ${derivative(arg2.toString(), param, steps)}`
+          }
+          console.log('arg2', arg2)
+          step = {
+            step: EStep.Table,
+            formula: `\\left({${arg1.value}^{${arg2.content?.toTex() || arg2.toTex()}}}\\right)_{${isParenthesisNode(arg2) ? paramName: param}}^{\\prime} = {${arg1.value}^{${arg2.content?.toTex() || arg2.toTex()}}}\\cdot ln{${arg1.value}}${isParenthesisNode(arg2) ? `,\\thinspace где\\thinspace ${paramName} = ${z}` : ''}`,
+            tableDerivative: tableDerivations.exp
+          }
+          steps.push(step)
+        } else if (isSymbolNode(arg1) && isConstantNode(arg2)) {
+          res += tree.toString()
+        } else if (isSymbolNode(arg1)) {
+          res += `${arg1.name}^${arg2.toString()}${isExp(arg1) ? '' : `* ln(${arg1.name})`}`
+          console.log(res)
+          if (isParenthesisNode(arg2)) {
+            z = arg2.content.toTex()
+            step = {
+              step: EStep.Difficult,
+              formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\left({${tree.toTex()}}\\right)_{${paramName}}^{\\prime}\\cdot \\left({${arg2.content.toTex()}}\\right)_{${param}}^{\\prime},\\thinspace где\\thinspace ${paramName} = ${z}`,
             }
             steps.push(step)
             res += `* ${derivative(arg2.toString(), param, steps)}`
           }
           step = {
             step: EStep.Table,
-            formula: `\\left({${arg1.value}^{${arg2.content.toTex()}}}\\right)_{x}^{\\prime} = {${arg1.value}^{${arg2.toTex()}}}\\cdot ln{${arg1.value}}`,
-            tableDerivative: tableDerivations.exp
+            formula: `\\left({${tree.toTex()}}\\right)_{${isParenthesisNode(arg2) ? paramName : param}}^{\\prime} = {${arg1.toTex()}^{${arg2.toTex()}}}${isExp(arg1) ? '' : `\\cdot ln{${arg1.value}}`}${isParenthesisNode(arg2) ? `,\\thinspace где\\thinspace ${paramName} = ${z}`: ''}`,
+            tableDerivative: isExp(arg1) ? tableDerivations.expE : tableDerivations.exp
           }
           steps.push(step)
         } else if (isOperatorNode(arg1)) {
 
+          z = arg1.toTex()
           step = {
             step: EStep.Difficult,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\left({${tree.toTex()}}\\right)_{x}^{\\prime}\\cdot ${arg1.toTex()}_{x}^{\\prime}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\left({${tree.toTex()}}\\right)_{${paramName}}^{\\prime}\\cdot ${arg1.toTex()}_{${param}}^{\\prime},\\thinspace где\\thinspace ${paramName} = ${z}`,
           }
           steps.push(step)
 
           if (isConstantNode(arg2)) {
             step = {
               step: EStep.Table,
-              formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = ${derivativePowFormula(arg2.value, arg1.toTex())}`,
+              formula: `\\left({${tree.toTex()}}\\right)_{${paramName}}^{\\prime} = ${derivativePowFormula(arg2.value, arg1.toTex())},\\thinspace где\\thinspace ${paramName} = ${z}`,
               tableDerivative: tableDerivations.pow
             }
             steps.push(step)
@@ -143,7 +181,7 @@ export function derivative(func: string, param: string, steps: StepProp[]): stri
             const val = getConstant(arg2)
             step = {
               step: EStep.Table,
-              formula: `\\left({${tree.toString()}}\\right)_{x}^{\\prime} = ${derivativePowFormula(val, arg1.toString())}`,
+              formula: `\\left({${tree.toString()}}\\right)_{${paramName}}^{\\prime} = ${derivativePowFormula(val, arg1.toString())},\\thinspace где\\thinspace ${paramName} = ${z}`,
               tableDerivative: tableDerivations.pow
             }
             steps.push(step)
@@ -155,21 +193,23 @@ export function derivative(func: string, param: string, steps: StepProp[]): stri
         if (isParam(arg1, param)) {
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = ${derivativeSqrtFormula(param)}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = ${derivativeSqrtFormula(param)}`,
             tableDerivative: tableDerivations.sqrt
           }
           steps.push(step)
           res += derivativeSqrt(param)
         } else if (isOperatorNode(arg1) || isParenthesisNode(arg1)) {
+
           const currentTree = isParenthesisNode(arg1) ? arg1.content.toString() : arg1.toString()
+          z = isParenthesisNode(arg1) ? arg1.content.toTex() : arg1.toTex()
           step = {
             step: EStep.Difficult,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime}= (${tree.toTex()})_{x}^{\\prime}\\cdot (${arg1.toTex()})_{x}^{\\prime})`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime}= (${tree.toTex()})_{${paramName}}^{\\prime}\\cdot (${arg1.toTex()})_{${param}}^{\\prime}),\\thinspace где\\thinspace ${paramName} = ${z}`,
           }
           steps.push(step)
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = ${derivativeSqrtFormula(currentTree)}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${paramName}}^{\\prime} = ${derivativeSqrtFormula(currentTree)},\\thinspace где\\thinspace ${paramName} = ${z}`,
             tableDerivative: tableDerivations.sqrt
           }
           steps.push(step)
@@ -181,36 +221,57 @@ export function derivative(func: string, param: string, steps: StepProp[]): stri
           if (isConstantNode(arg2)) {
             step = {
               step: EStep.ConstantX,
-              formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = ${arg2.value}`,
+              formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = ${arg2.value}`,
             }
             steps.push(step)
             res += `${arg2.value}`
           } else if (isOperatorNode(arg2)) {
             step = {
               step: EStep.ConstantX,
-              formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = 1\\cdot ${derivative(arg2.toString(), param, steps)}`,
+              formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = 1\\cdot ${derivative(arg2.toString(), param, steps)}`,
             }
             steps.push(step)
             res += `1 * ${derivative(arg2.toString(), param, steps)}`
+          } else if (isSymbolNode(arg2)) {
+            step = {
+              step: EStep.ConstantX,
+              formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = 1\\cdot ${arg2.toTex()}`,
+            }
+            steps.push(step)
+            res += `1 * ${arg2.toString()}`
           }
         } else if (isConstantNode(arg1)) {
           const val = 'args' in arg1 ? `${arg1.args[0]}${arg1.op}${arg1.args[1]}` : arg1.value
           if (isParam(arg2, param)) {
             step = {
               step: EStep.ConstantX,
-              formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = ${val}`,
+              formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = ${val}`,
             }
             steps.push(step)
             res += `${val}`
           } else if (isOperatorNode(arg2)) {
             step = {
               step: EStep.ConstantX,
-              formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = ${val}\\cdot (${derivative(arg2.toString(), param, steps)})`,
+              formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = ${val}\\cdot (${derivative(arg2.toString(), param, steps)})`,
             }
             steps.push(step)
             res += `${val} * (${derivative(arg2.toString(), param, steps)})`
           }
-        } else if ((isOperatorNode(arg1) || isParenthesisNode(arg1)) && (isOperatorNode(arg2) || isParenthesisNode(arg2))) {
+        } else if (isSymbolNode(arg1)) {
+          step = {
+            step: EStep.ConstantX,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = ${arg1.toTex()}\\cdot (${arg2.toTex()})_{${param}}^{\\prime}`,
+          }
+          steps.push(step)
+          res += `${arg1.toString()} * (${derivative(arg2.toString(), param, steps)})`
+        } else if ((isOperatorNode(arg1) || isParenthesisNode(arg1)) && isSymbolNode(arg2)) {
+          step = {
+            step: EStep.ConstantX,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = ${arg2.toTex()}\\cdot (${arg1.toTex()})_{${param}}^{\\prime}`,
+          }
+          steps.push(step)
+          res += `${arg2.toString()} * (${derivative(arg1.toString(), param, steps)})`
+        }  else if ((isOperatorNode(arg1) || isParenthesisNode(arg1)) && (isOperatorNode(arg2) || isParenthesisNode(arg2))) {
           const u = isParenthesisNode(arg1) ? arg1.content.toString() : arg1.toString()
           const uFormula = isParenthesisNode(arg1) ? arg1.content.toTex() : arg1.toTex()
           const v = isParenthesisNode(arg2) ? arg2.content.toString() : arg2.toString()
@@ -219,7 +280,7 @@ export function derivative(func: string, param: string, steps: StepProp[]): stri
 
           step = {
             step: EStep.Mul,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\left({${uFormula}}\\right)_{x}^{\\prime}\\cdot\\left({${vFormula}}\\right) + \\left(${uFormula}\\right)\\cdot\\left({${vFormula}}\\right)`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\left({${uFormula}}\\right)_{${param}}^{\\prime}\\cdot\\left({${vFormula}}\\right) + \\left(${uFormula}\\right)\\cdot\\left({${vFormula}}\\right)`,
           }
           steps.push(step)
           // res += `(${derivative(u, param, steps)})*(${v}) + (${u})*(${derivative(v, param, steps)})`
@@ -232,40 +293,41 @@ export function derivative(func: string, param: string, steps: StepProp[]): stri
         break
       case "divide":
         if (isParam(arg1, param) && isConstantNode(arg2)) {
+          const val = getConstant(arg2)
           step = {
             step: EStep.ConstantX,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\frac{1}{${arg2.value}}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\frac{1}{${val}}`,
           }
           steps.push(step)
-          res += `1/${arg2.value}`
+          res += `1/${val}`
         } else if (isConstantNode(arg1) && isParam(arg2, param)) {
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = ${derivativeDivideFormula(arg1.value, param)}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = ${derivativeDivideFormula(arg1.value, param)}`,
             tableDerivative: tableDerivations.pow
           }
           steps.push(step)
           res += derivativeDivide(arg1.value, param)
-        } else if ((isParenthesisNode(arg1) && (isConstantNode(arg1.content) || isSymbolNode(arg1.content)))
+        } else if ((isParenthesisNode(arg1) && (isConstantNode(arg1.content) || (isSymbolNode(arg1.content) && !isParenthesisNode(arg2))))
           && (isParenthesisNode(arg2) && (isConstantNode(arg2.content) || isSymbolNode(arg2.content)))) {
           const val1 = isConstantNode(arg1.content) ? getConstant(arg1) : arg1.content.name
           const val2 = isConstantNode(arg2.content) ? getConstant(arg2) : arg2.content.name
 
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = ${derivativeDivideFormula(val1, val2)}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = ${derivativeDivideFormula(val1, val2)}`,
             tableDerivative: tableDerivations.pow
           }
           steps.push(step)
           res += derivativeDivide(val1, val2)
-        } else if ((isOperatorNode(arg1) || isParenthesisNode(arg1)) && (isOperatorNode(arg2) || isParenthesisNode(arg2))) {
+        } else if ((isParam(arg1, param) || isOperatorNode(arg1) || isParenthesisNode(arg1)) && (isOperatorNode(arg2) || isParenthesisNode(arg2))) {
           const u = isParenthesisNode(arg1) ? arg1.content.toString() : arg1.toString()
           const uFormula = isParenthesisNode(arg1) ? arg1.content.toTex() : arg1.toTex()
           const v = isParenthesisNode(arg2) ? arg2.content.toString() : arg2.toString()
           const vFormula = isParenthesisNode(arg2) ? arg2.content.toTex() : arg2.toTex()
           step = {
             step: EStep.Div,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\frac{\\left(${uFormula}\\right)_{x}^{\\prime}\\cdot \\left({${vFormula}}\\right) - \\left({${uFormula}}\\right)\\cdot\\left({${vFormula}}\\right)_{x}^{\\prime}}{\\left({${vFormula}}\\right)^{2}}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\frac{\\left(${uFormula}\\right)_{${param}}^{\\prime}\\cdot \\left({${vFormula}}\\right) - \\left({${uFormula}}\\right)\\cdot\\left({${vFormula}}\\right)_{${param}}^{\\prime}}{\\left({${vFormula}}\\right)^{2}}`,
           }
           steps.push(step)
           res += '('
@@ -285,7 +347,7 @@ export function derivative(func: string, param: string, steps: StepProp[]): stri
       case "add":
         step = {
           step: EStep.AddOrSub,
-          formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\left({${arg1.toTex()}}\\right)_{x}^{\\prime} + \\left({${arg2.toTex()}}\\right)_{x}^{\\prime}`
+          formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\left({${arg1.toTex()}}\\right)_{${param}}^{\\prime} + \\left({${arg2.toTex()}}\\right)_{${param}}^{\\prime}`
         }
         steps.push(step)
         res += `${derivative(arg1.toString(), param, steps)} + ${derivative(arg2.toString(), param, steps)}`
@@ -293,7 +355,7 @@ export function derivative(func: string, param: string, steps: StepProp[]): stri
       case "subtract":
         step = {
           step: EStep.AddOrSub,
-          formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\left({${arg1.toTex()}}\\right)_{x}^{\\prime} - \\left({${arg2.toTex()}}\\right)_{x}^{\\prime}`
+          formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\left({${arg1.toTex()}}\\right)_{${param}}^{\\prime} - \\left({${arg2.toTex()}}\\right)_{${param}}^{\\prime}`
         }
         steps.push(step)
         res += `${derivative(arg1.toString(), param, steps)} - (${derivative(arg2.toString(), param, steps)})`
@@ -302,7 +364,7 @@ export function derivative(func: string, param: string, steps: StepProp[]): stri
         if (arg2) {
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\frac{1}{${isParam(arg1, param) ? param : arg1.toTex()}\\cdot\\ln{${arg2.value}}}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\frac{1}{${isParam(arg1, param) ? param : arg1.toTex()}\\cdot\\ln{${arg2.value}}}`,
             tableDerivative: tableDerivations.log
           }
           steps.push(step)
@@ -316,16 +378,18 @@ export function derivative(func: string, param: string, steps: StepProp[]): stri
             }
           }
         } else {
-          if (!isParam(arg1, param) ) {
+          console.log('arg1', arg1)
+          z = arg1.toTex()
+          if (!isParam(arg1, param)) {
             step = {
               step: EStep.Difficult,
-              formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\left({${tree.toTex()}}\\right)_{x}^{\\prime}\\cdot \\left({${arg1.toTex()}}\\right)_{x}^{\\prime}`,
+              formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\left({${tree.toTex()}}\\right)_{${paramName}}^{\\prime}\\cdot \\left({${arg1.toTex()}}\\right)_{${param}}^{\\prime},\\thinspace где\\thinspace ${paramName} = ${z}`,
             }
             steps.push(step)
           }
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\frac{1}{\\ln\\left({${isParam(arg1, param) ? param : arg1.toTex()}}\\right)}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${isParam(arg1, param) ? param : paramName}}^{\\prime} = \\frac{1}{\\ln\\left({${isParam(arg1, param) ? param : arg1.toTex()}}\\right)}${isParam(arg1, param) ? '' : `,\\thinspace где\\thinspace ${paramName} = ${z}`}`,
             tableDerivative: tableDerivations.ln
           }
           steps.push(step)
@@ -336,20 +400,21 @@ export function derivative(func: string, param: string, steps: StepProp[]): stri
         if (isParam(arg1, param)) {
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\cos\\left({${arg1.toString()}}\\right)`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\cos\\left({${arg1.toString()}}\\right)`,
             tableDerivative: tableDerivations.sin
           }
           steps.push(step)
           res += `cos(${arg1.toString()})`
         } else if (isOperatorNode(arg1)) {
+          z = arg1.toTex()
           step = {
             step: EStep.Difficult,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\left({${tree.toTex()}}\\right)_{x}^{\\prime}\\cdot \\left({${arg1.toTex()}}\\right)_{x}^{\\prime}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\left({${tree.toTex()}}\\right)_{${paramName}}^{\\prime}\\cdot \\left({${arg1.toTex()}}\\right)_{${param}}^{\\prime},\\thinspace где\\thinspace ${paramName} = ${z}`,
           }
           steps.push(step)
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\cos\\left({${arg1.toString()}}\\right)`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${paramName}}^{\\prime} = \\cos\\left({${arg1.toString()}}\\right),\\thinspace где\\thinspace ${paramName} = ${z}`,
             tableDerivative: tableDerivations.sin
           }
           steps.push(step)
@@ -360,20 +425,21 @@ export function derivative(func: string, param: string, steps: StepProp[]): stri
         if (isParam(arg1, param)) {
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = -\\sin\\left({${arg1.toTex()}}\\right)`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = -\\sin\\left({${arg1.toTex()}}\\right)`,
             tableDerivative: tableDerivations.cos
           }
           steps.push(step)
           res += `-sin(${arg1.toString()})`
         } else if (isOperatorNode(arg1)) {
+          z = arg1.toTex()
           step = {
             step: EStep.Difficult,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\left({${tree.toTex()}}\\right)_{x}^{\\prime}\\cdot \\left({${arg1.toTex()}}\\right)_{x}^{\\prime}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\left({${tree.toTex()}}\\right)_{${paramName}}^{\\prime}\\cdot \\left({${arg1.toTex()}}\\right)_{${param}}^{\\prime},\\thinspace где\\thinspace ${paramName} = ${z}`,
           }
           steps.push(step)
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = -\\sin\\left({${arg1.toTex()}}\\right)`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${paramName}}^{\\prime} = -\\sin\\left({${arg1.toTex()}}\\right),\\thinspace где\\thinspace ${paramName} = ${z}`,
             tableDerivative: tableDerivations.cos
           }
           steps.push(step)
@@ -384,20 +450,21 @@ export function derivative(func: string, param: string, steps: StepProp[]): stri
         if (isParam(arg1, param)) {
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\frac{1}{{\\cos^2{(${arg1.toTex()})}}}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\frac{1}{{\\cos^2{(${arg1.toTex()})}}}`,
             tableDerivative: tableDerivations.tg
           }
           steps.push(step)
           res += `1/(cos(${arg1.toString()})^2)`
         } else if (isOperatorNode(arg1)) {
+          z = arg1.toTex()
           step = {
             step: EStep.Difficult,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\left({${tree.toTex()}}\\right)_{x}^{\\prime}\\cdot \\left({${arg1.toTex()}}\\right)_{x}^{\\prime}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\left({${tree.toTex()}}\\right)_{${paramName}}^{\\prime}\\cdot \\left({${arg1.toTex()}}\\right)_{${param}}^{\\prime},\\thinspace где\\thinspace ${paramName} = ${z}`,
           }
           steps.push(step)
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\frac{1}{{\\cos^2{(${arg1.toTex()})}}}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${paramName}}^{\\prime} = \\frac{1}{{\\cos^2{(${arg1.toTex()})}}},\\thinspace где\\thinspace ${paramName} = ${z}`,
             tableDerivative: tableDerivations.tg
           }
           steps.push(step)
@@ -408,20 +475,21 @@ export function derivative(func: string, param: string, steps: StepProp[]): stri
         if (isParam(arg1, param)) {
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\frac{1}{{\\cos^2{(${arg1.toTex()})}}}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\frac{1}{{\\cos^2{(${arg1.toTex()})}}}`,
             tableDerivative: tableDerivations.ctg
           }
           steps.push(step)
           res += `-1/(sin(${arg1.toString()})^2)`
         } else if (isOperatorNode(arg1)) {
+          z = arg1.toTex()
           step = {
             step: EStep.Difficult,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\left({${tree.toTex()}}\\right)_{x}^{\\prime}\\cdot \\left({${arg1.toTex()}}\\right)_{x}^{\\prime}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\left({${tree.toTex()}}\\right)_{${paramName}}^{\\prime}\\cdot \\left({${arg1.toTex()}}\\right)_{${param}}^{\\prime},\\thinspace где\\thinspace ${paramName} = ${z}`,
           }
           steps.push(step)
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\frac{1}{{\\cos^2{(${arg1.toTex()})}}}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${paramName}}^{\\prime} = \\frac{1}{{\\cos^2{(${arg1.toTex()})}}},\\thinspace где\\thinspace ${paramName} = ${z}`,
             tableDerivative: tableDerivations.ctg
           }
           steps.push(step)
@@ -432,20 +500,21 @@ export function derivative(func: string, param: string, steps: StepProp[]): stri
         if (isParam(arg1, param)) {
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\frac{1}{\\sqrt{1-{\\left(${arg1.toString()}\\right)}^2}}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\frac{1}{\\sqrt{1-{\\left(${arg1.toString()}\\right)}^2}}`,
             tableDerivative: tableDerivations.arcsin
           }
           steps.push(step)
           res += `1/sqrt(1-(${arg1.toString()})^2)`
         } else if (isOperatorNode(arg1)) {
+          z = arg1.toTex()
           step = {
             step: EStep.Difficult,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\left({${tree.toTex()}}\\right)_{x}^{\\prime}\\cdot \\left({${arg1.toTex()}}\\right)_{x}^{\\prime}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\left({${tree.toTex()}}\\right)_{${paramName}}^{\\prime}\\cdot \\left({${arg1.toTex()}}\\right)_{${param}}^{\\prime},\\thinspace где\\thinspace ${paramName} = ${z}`,
           }
           steps.push(step)
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\frac{1}{\\sqrt{1-{\\left(${arg1.toString()}\\right)}^2}}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${paramName}}^{\\prime} = \\frac{1}{\\sqrt{1-{\\left(${arg1.toString()}\\right)}^2}},\\thinspace где\\thinspace ${paramName} = ${z}`,
             tableDerivative: tableDerivations.arcsin
           }
           steps.push(step)
@@ -456,21 +525,22 @@ export function derivative(func: string, param: string, steps: StepProp[]): stri
         if (isParam(arg1, param)) {
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = -\\frac{1}{\\sqrt{(1-{\\left(${arg1.toString()}\\right)}^2)}}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = -\\frac{1}{\\sqrt{(1-{\\left(${arg1.toString()}\\right)}^2)}}`,
             tableDerivative: tableDerivations.arccos
           }
           steps.push(step)
           res += `-1/sqrt(1-(${arg1.toString()})^2)`
         } else if (isOperatorNode(arg1)) {
+          z = arg1.toTex()
 
           step = {
             step: EStep.Difficult,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\left({${tree.toTex()}}\\right)_{x}^{\\prime}\\cdot \\left({${arg1.toTex()}}\\right)_{x}^{\\prime}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\left({${tree.toTex()}}\\right)_{${paramName}}^{\\prime}\\cdot \\left({${arg1.toTex()}}\\right)_{${param}}^{\\prime},\\thinspace где\\thinspace ${paramName} = ${z}`,
           }
           steps.push(step)
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = -\\frac{1}{\\sqrt{(1-{\\left(${arg1.toString()}\\right)}^2)}}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${paramName}}^{\\prime} = -\\frac{1}{\\sqrt{(1-{\\left(${arg1.toString()}\\right)}^2)}},\\thinspace где\\thinspace ${paramName} = ${z}`,
             tableDerivative: tableDerivations.arccos
           }
           steps.push(step)
@@ -481,20 +551,21 @@ export function derivative(func: string, param: string, steps: StepProp[]): stri
         if (isParam(arg1, param)) {
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\frac{1}{(1+{\\left(${arg1.toString()}\\right)}^2}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\frac{1}{(1+{\\left(${arg1.toString()}\\right)}^2}`,
             tableDerivative: tableDerivations.arctg
           }
           steps.push(step)
           res += `1/(1+(${arg1.toString()})^2)`
         } else if (isOperatorNode(arg1)) {
+          z = arg1.toTex()
           step = {
             step: EStep.Difficult,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\left({${tree.toTex()}}\\right)_{x}^{\\prime}\\cdot \\left({${arg1.toTex()}}\\right)_{x}^{\\prime}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\left({${tree.toTex()}}\\right)_{${paramName}}^{\\prime}\\cdot \\left({${arg1.toTex()}}\\right)_{${param}}^{\\prime},\\thinspace где\\thinspace ${paramName} = ${z}`,
           }
           steps.push(step)
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\frac{1}{(1+{\\left(${arg1.toString()}\\right)}^2}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${paramName}}^{\\prime} = \\frac{1}{(1+{\\left(${arg1.toString()}\\right)}^2},\\thinspace где\\thinspace ${paramName} = ${z}`,
             tableDerivative: tableDerivations.arctg
           }
           steps.push(step)
@@ -505,20 +576,21 @@ export function derivative(func: string, param: string, steps: StepProp[]): stri
         if (isParam(arg1, param)) {
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = -\\frac{1}{(1+{\\left(${arg1.toString()}\\right)}^2}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = -\\frac{1}{(1+{\\left(${arg1.toString()}\\right)}^2}`,
             tableDerivative: tableDerivations.arcctg
           }
           steps.push(step)
           res += `-1/(1+(${arg1.toString()})^2)`
         } else if (isOperatorNode(arg1)) {
+          z = arg1.toTex()
           step = {
             step: EStep.Difficult,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\left({${tree.toTex()}}\\right)_{x}^{\\prime}\\cdot \\left({${arg1.toTex()}}\\right)_{x}^{\\prime}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\left({${tree.toTex()}}\\right)_{${paramName}}^{\\prime}\\cdot \\left({${arg1.toTex()}}\\right)_{${param}}^{\\prime},\\thinspace где\\thinspace ${paramName} = ${z}`,
           }
           steps.push(step)
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = -\\frac{1}{(1+{\\left(${arg1.toString()}\\right)}^2}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${paramName}}^{\\prime} = -\\frac{1}{(1+{\\left(${arg1.toString()}\\right)}^2},\\thinspace где\\thinspace ${paramName} = ${z}`,
             tableDerivative: tableDerivations.arcctg
           }
           steps.push(step)
@@ -529,7 +601,7 @@ export function derivative(func: string, param: string, steps: StepProp[]): stri
         if (isParam(arg1, param)) {
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\ch\\left({${arg1.toString()}}\\right)`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\ch\\left({${arg1.toString()}}\\right)`,
             tableDerivative: tableDerivations.sh
           }
           steps.push(step)
@@ -537,12 +609,12 @@ export function derivative(func: string, param: string, steps: StepProp[]): stri
         } else if (isOperatorNode(arg1)) {
           step = {
             step: EStep.Difficult,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\left({${tree.toTex()}}\\right)_{x}^{\\prime}\\cdot \\left({${arg1.toTex()}}\\right)_{x}^{\\prime}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\left({${tree.toTex()}}\\right)_{${param}}^{\\prime}\\cdot \\left({${arg1.toTex()}}\\right)_{${param}}^{\\prime}`,
           }
           steps.push(step)
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\ch\\left({${arg1.toString()}}\\right)`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\ch\\left({${arg1.toString()}}\\right)`,
             tableDerivative: tableDerivations.sh
           }
           steps.push(step)
@@ -553,7 +625,7 @@ export function derivative(func: string, param: string, steps: StepProp[]): stri
         if (isParam(arg1, param)) {
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = -\\sh\\left({${arg1.toString()}}\\right)`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = -\\sh\\left({${arg1.toString()}}\\right)`,
             tableDerivative: tableDerivations.ch
           }
           steps.push(step)
@@ -562,12 +634,12 @@ export function derivative(func: string, param: string, steps: StepProp[]): stri
 
           step = {
             step: EStep.Difficult,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\left({${tree.toTex()}}\\right)_{x}^{\\prime}\\cdot \\left({${arg1.toTex()}}\\right)_{x}^{\\prime}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\left({${tree.toTex()}}\\right)_{${param}}^{\\prime}\\cdot \\left({${arg1.toTex()}}\\right)_{${param}}^{\\prime}`,
           }
           steps.push(step)
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = -\\sh\\left({${arg1.toString()}}\\right)`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = -\\sh\\left({${arg1.toString()}}\\right)`,
             tableDerivative: tableDerivations.ch
           }
           steps.push(step)
@@ -578,7 +650,7 @@ export function derivative(func: string, param: string, steps: StepProp[]): stri
         if (isParam(arg1, param)) {
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\frac{1}{{\\ch^2{(${arg1.toTex()})}}}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\frac{1}{{\\ch^2{(${arg1.toTex()})}}}`,
             tableDerivative: tableDerivations.th
           }
           steps.push(step)
@@ -586,12 +658,12 @@ export function derivative(func: string, param: string, steps: StepProp[]): stri
         } else if (isOperatorNode(arg1)) {
           step = {
             step: EStep.Difficult,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\left({${tree.toTex()}}\\right)_{x}^{\\prime}\\cdot \\left({${arg1.toTex()}}\\right)_{x}^{\\prime}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\left({${tree.toTex()}}\\right)_{${param}}^{\\prime}\\cdot \\left({${arg1.toTex()}}\\right)_{${param}}^{\\prime}`,
           }
           steps.push(step)
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\frac{1}{{\\ch^2{(${arg1.toTex()})}}}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\frac{1}{{\\ch^2{(${arg1.toTex()})}}}`,
             tableDerivative: tableDerivations.th
           }
           steps.push(step)
@@ -602,7 +674,7 @@ export function derivative(func: string, param: string, steps: StepProp[]): stri
         if (isParam(arg1, param)) {
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\frac{1}{{\\sh^2{(${arg1.toTex()})}}}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\frac{1}{{\\sh^2{(${arg1.toTex()})}}}`,
             tableDerivative: tableDerivations.cth
           }
           steps.push(step)
@@ -610,12 +682,12 @@ export function derivative(func: string, param: string, steps: StepProp[]): stri
         } else if (isOperatorNode(arg1)) {
           step = {
             step: EStep.Difficult,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\left({${tree.toTex()}}\\right)_{x}^{\\prime}\\cdot \\left({${arg1.toTex()}}\\right)_{x}^{\\prime}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\left({${tree.toTex()}}\\right)_{${param}}^{\\prime}\\cdot \\left({${arg1.toTex()}}\\right)_{${param}}^{\\prime}`,
           }
           steps.push(step)
           step = {
             step: EStep.Table,
-            formula: `\\left({${tree.toTex()}}\\right)_{x}^{\\prime} = \\frac{1}{{\\sh^2{(${arg1.toTex()})}}}`,
+            formula: `\\left({${tree.toTex()}}\\right)_{${param}}^{\\prime} = \\frac{1}{{\\sh^2{(${arg1.toTex()})}}}`,
             tableDerivative: tableDerivations.cth
           }
           steps.push(step)
