@@ -3,19 +3,20 @@
     <div class="step--number">{{props.index + 1}}</div>
     <div class="step--content">
       <h3 class="step--title">{{stepData.title}}</h3>
-<!--      <p class="gray-wrapper"><math-jax latex="\left(a^{ x}\right)_{x}^{\prime}=a^{x}\cdot\ln{ x}"></math-jax></p>-->
-      <p class="gray-wrapper"><math-jax :latex="props.step.tableDerivative || stepData.formula"></math-jax></p>
-      <p><math-jax :latex="props.step.formula"></math-jax></p>
+      <RouterLink v-if="props.step.tableDerivative?.link || stepData.link" :to="`/formulas#${props.step.tableDerivative?.link || stepData.link}`" class="gray-wrapper">$${{ props.step.tableDerivative?.latex || stepData.formula }}$$</RouterLink>
+      <p v-else class="gray-wrapper">$${{ props.step.tableDerivative?.latex || stepData.formula }}$$</p>
+      <p>$${{props.step.formula}}$$</p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import {StepProp, steps} from "@/config/steps";
+import {computed} from "vue";
 // import {parse} from 'mathjs'
 
 const props = defineProps<{ step: StepProp, index: number }>()
-const stepData = steps[props.step.step]
+const stepData = computed(() => steps[props.step.step])
 </script>
 
 <style scoped lang="scss">
