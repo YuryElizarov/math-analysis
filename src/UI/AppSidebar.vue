@@ -38,7 +38,8 @@ const isClosed = ref<boolean>(true);
 
 <style scoped lang="scss">
 aside {
-     --sidebar-width: 250px;
+     --sidebar-width: 275px;
+     --padding-left: 15px;
 
      position: fixed;
      top: var(--navbar-height);
@@ -76,10 +77,11 @@ aside {
 
 .sidebar {
      width: var(--sidebar-width);
-     height: 100vh;
-     padding: 20px 10px;
+     height: calc(100vh - var(--navbar-height));
+     padding: 20px 15px 50px var(--padding-left);
      background-color: var(--base-100);
      box-shadow: 2px 0 25px rgba(var(--base-1000-rgb), 0.06);
+     overflow-y: auto;
 
      .divider {
           margin: 10px 0;
@@ -109,7 +111,7 @@ aside {
      &::before {
           content: '';
           position: absolute;
-          left: -10px;
+          left: calc(0px - var(--padding-left));
           width: 0px;
           height: 100%;
           background-color: transparent;
@@ -122,7 +124,7 @@ aside {
 
           &::before {
                background-color: var(--main-500);
-               width: 3px;
+               width: 5px;
           }
      }
 }
