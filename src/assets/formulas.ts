@@ -527,5 +527,166 @@ export default [
                 ]
             }
         ]
+    },
+    {
+        id: "table-integrals",
+        name: "Табличные неопределенные интегралы",
+        content: [
+            {
+                id: "integral-pow",
+                name: "Неопределенный интеграл степенной функции",
+                latex: "\\int x^{n} d x=\\frac{x^{n+1}}{n+1}+C, n \\neq-1",
+                extras: [
+                    {
+                        id: "related",
+                        name: "Связано",
+                        content: h("div", [
+                            h("p", "$\\int d x=x+C$"),
+                            h("p", "$\\int \\frac{d x}{\\sqrt{x}}=2 \\sqrt{x}+C$")
+                            
+                        ])
+                    }
+                ]
+            },
+            {
+                id: "integral-div",
+                name: "Неопределенный интеграл функции $1/x$",
+                latex: "\\int \\frac{d x}{x}=\\ln |x|+C",
+                extras: []
+            },
+            {
+                id: "integral-exponential",
+                name: "Неопределенный интеграл показательной функции",
+                latex: "\\int a^{x} d x=\\frac{a^{x}}{\\ln a}+C",
+                extras: [
+                {
+                    id: "related",
+                    name: "Связано",
+                    content: h("p", "$\\int e^{x} d x=e^{x}+C$")
+                }
+            ]
+            },
+            {
+                id: "integral-sin",
+                name: "Неопределенный интеграл синуса",
+                latex: "\\int \\sin x d x=-\\cos x+C",
+                extras: []
+            },
+            {
+                id: "integral-cos",
+                name: "Неопределенный интеграл косинуса",
+                latex: "\\int \\cos x d x=\\sin x+C",
+                extras: []
+            },
+            {
+                id: "integral-cos-2",
+                name: "Неопределенный интеграл функции $\\frac{1}{cos^{2}x}$",
+                latex: "\\int \\frac{d x}{\\cos ^{2} x}=\\operatorname{tg} x+C",
+                extras: []
+            },
+            {
+                id: "integral-sin-2",
+                name: "Неопределенный интеграл функции $\\frac{1}{sin^{2}x}$",
+                latex: "\\int \\frac{d x}{\\sin ^{2} x}=-\\operatorname{ctg} x+C",
+                extras: []
+            },
+            {
+                id: "integral-a2x2",
+                name: "Неопределенный интеграл функции $\\frac{1}{a^{2}+x^{2}}$",
+                latex: "\\int \\frac{d x}{a^{2}+x^{2}}=\\frac{1}{a} \\operatorname{arctg} \\frac{x}{a}+C_{1}=-\\frac{1}{a} \\operatorname{arcctg} \\frac{x}{a}+C_{2}, a \\neq 0",
+                extras: []
+            },
+            {
+                id: "integral-sqrt-a2x2",
+                name: "Неопределенный интеграл функции $\\frac{1}{\\sqrt{a^{2}-x^{2}}}$",
+                latex: "\\int \\frac{d x}{\\sqrt{a^{2}-x^{2}}}=\\arcsin \\frac{x}{a}+C_{1}=-\\arccos \\frac{x}{a}+C_{2}, a>0",
+                extras: []
+            },
+            {
+                id: "integral-high-log",
+                name: "Неопределенный интеграл функции $\\frac{1}{a^{2}-x^{2}}$",
+                latex: "\\int \\frac{d x}{a^{2}-x^{2}}=\\frac{1}{2 a} \\ln \\left|\\frac{x+a}{x-a}\\right|+C=-\\frac{1}{2 a} \\ln \\left|\\frac{x-a}{x+a}\\right|+C",
+                extras: []
+            },
+            {
+                id: "integral-long-log",
+                name: "Неопределенный интеграл функции $\\frac{1}{\\sqrt{x^{2} \\pm a^{2}}}$",
+                latex: "\\int \\frac{d x}{\\sqrt{x^{2} \\pm a^{2}}}=\\ln \\left|x + \\sqrt{x^2 \\pm a^2}\\right| + C, a \\ne 0",
+                extras: []
+            }
+        ]
+    },
+    {
+        id: "integration-methods",
+        name: "Методы интегрирования",
+        content: [
+            {
+                id: "integration-by-parts",
+                name: "Интегрирование по частям",
+                latex: "\\int u d v=u v-\\int v d u",
+                extras: [
+                    {
+                        id: "more",
+                        name: "Подробнее",
+                        content: h("div", [
+                            h("p", "Можно выделить два основных класса интегралов, берущихся по частям:"),
+                            h("p", "$\\int P_n(x) \\cdot \\underbrace{\\left[\\begin{array}{c}\\cos k x \\\\ \\sin k x \\\\ e^{k x} \\\\ a^{k x} \\\\ \\frac{1}{\\cos ^2 x} \\\\ \\frac{1}{\\sin ^2 x}\\end{array}\\right] \\cdot d x}_{d v}$. Здесь за $u$ принимают целый многочлен $P_n(x)$, за $d v$ - оставшееся выражение."),
+                            h("p", "$\\int \\underbrace{\\left[\\begin{array}{c}\\ln x \\\\ \\log _a x \\\\ \\arcsin x \\\\ \\arccos x \\\\ \\operatorname{arctg} x \\\\ \\operatorname{arcctg} x\\end{array}\\right]}_u \\cdot \\underbrace{\\varphi(x) \\cdot d x}_{d v}$. Здесь за и принимают обратную функцию, например, $\\arcsin x$, за $d v-$ оставшееся выражение, то есть $\\varphi(x) \\cdot d x$."),
+                            h("p", "При нахождении необходимой для применения формулы интегрирования по частям функции $V$ можно взять только одну из полученных первообразных (принять постоянную $C$ за 0 или другое «удобное» значение)."),
+                        ])
+                    }
+                ]
+            }
+        ]
+    },
+    {
+        id: "calculus",
+        name: "Интегральное исчисление",
+        content: [
+            {
+                id: "barrows-theorem",
+                name: "Теорема Барроу",
+                latex: "\\left(\\int_{a}^{t} f(x) d x\\right)_{t}^{\\prime}=f(t)",
+                extras: []
+            },
+            {
+                id: "newton-leibniz-theorem",
+                name: "Теорема Ньютона-Лейбница",
+                latex: "\\int_{a}^{b} f(x) d x=\\left.F(x)\\right|_{a} ^{b}=F(b)-F(a)",
+                extras: [
+
+                ]
+            },
+            {
+                id: "figure-area",
+                name: "Площадь правильной фигуры",
+                latex: "F=\\int_{a}^{b}\\left(f_{2}(x)-f_{1}(x)\\right) \\cdot d x",
+                extras: []
+            },
+            {
+                id: "sector-area",
+                name: "Площадь криволинейного сектора",
+                latex: "F=\\frac{1}{2} \\int_{\\alpha}^{\\beta}(\\rho(\\varphi))^{2} d \\varphi",
+                extras: []
+            },
+            {
+                id: "revolution-volume",
+                name: "Объем тела вращения",
+                latex: "V_x=\\pi \\int_a^b(y(x))^2 d x",
+                extras: []
+            },
+            {
+                id: "curve-length",
+                name: "Длина дуги",
+                latex: "l_{A B}=\\int_a^b \\sqrt{1+\\left(y_x^{\\prime}\\right)^2} \\cdot d x",
+                extras: []
+            },
+            {
+                id: "curve-differential",
+                name: "Дифференциал дуги",
+                latex: "d l=\\sqrt{(d x)^2+(d y)^2}",
+                extras: []
+            }
+        ]
     }
 ]

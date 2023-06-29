@@ -25,7 +25,8 @@ export interface Formula {
     extras: Array<TheoryExtra>
 }
 
-export interface FormulasGroup {
+export interface TheoryGroup<T> {
+    id: string,
     name: string,
-    content: Array<Formula>
+    content: Array<T>
 }
