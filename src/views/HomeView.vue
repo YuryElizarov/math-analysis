@@ -31,7 +31,7 @@ const derivationMethodTabs: string[] = [
 ]
 
 
-const functionType = ref<string>(functionTypesTabs[1])
+const functionType = ref<string>(functionTypesTabs[0])
 const derivationMethod = ref<string>(derivationMethodTabs[0])
 
 const selectFunctionType = (_functionType: string) => {

@@ -20,6 +20,7 @@
         <slot></slot>
       </math-field>
     </div>
+    <div/>
     <AppButton @action="renderResult">Дифференцировать</AppButton>
   </div>
   <div class="solution-wrapper" v-if="isShowSolution">

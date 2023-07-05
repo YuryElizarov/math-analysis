@@ -79,9 +79,9 @@ export function derivative(func: string, param: string, steps: StepProp[]): stri
   if (f.includes('∗')) {
     f = f.replaceAll('∗', '*')
   }
-  console.log(f)
+  // console.log(f)
   const tree: MathNode = mathjs.parse(f)
-  console.log(tree)
+  // console.log(tree)
   let step: StepProp
   let z: string
   const paramName = getParam(param)

@@ -3,7 +3,8 @@
     <div class="step--number">{{props.index + 1}}</div>
     <div class="step--content">
       <h3 class="step--title">{{stepData.title}}</h3>
-      <RouterLink v-if="props.step.tableDerivative?.link || stepData.link" :to="`/formulas#${props.step.tableDerivative?.link || stepData.link}`" class="gray-wrapper">$${{ props.step.tableDerivative?.latex || stepData.formula }}$$</RouterLink>
+<!--      <RouterLink v-if="props.step.tableDerivative?.link || stepData.link" @click="scrollToElement(`/formulas#${props.step.tableDerivative?.link || stepData.link}`, true)" :to="`/formulas#${props.step.tableDerivative?.link || stepData.link}`" class="gray-wrapper">$${{ props.step.tableDerivative?.latex || stepData.formula }}$$</RouterLink>-->
+      <a v-if="props.step.tableDerivative?.link || stepData.link" target="_blank" rel="noreferrer" :href="`/formulas#${props.step.tableDerivative?.link || stepData.link}`" class="gray-wrapper">$${{ props.step.tableDerivative?.latex || stepData.formula }}$$</a>
       <p v-else class="gray-wrapper">$${{ props.step.tableDerivative?.latex || stepData.formula }}$$</p>
       <p>$${{props.step.formula}}$$</p>
     </div>
@@ -14,6 +15,7 @@
 import {StepProp, steps} from "@/config/steps";
 import {computed} from "vue";
 // import {parse} from 'mathjs'
+import {scrollToElement} from '@/utils'
 
 const props = defineProps<{ step: StepProp, index: number }>()
 const stepData = computed(() => steps[props.step.step])

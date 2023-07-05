@@ -38,6 +38,7 @@
 
 <script lang="ts" setup>
 import AppText from "@/UI/AppText.vue";
+import AppHeading from "@/UI/AppHeading.vue";
 import AppInput from "@/UI/AppInput.vue";
 import AppButton from "@/UI/AppButton.vue";
 import CalculatorStep from "@/components/CalculatorStep.vue";
